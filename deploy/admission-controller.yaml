@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: validator
+  namespace: default
+  labels:
+    name: validator
+spec:
+  ports:
+  - name: webhook
+    port: 443
+    targetPort: 443
+  selector:
+    name: validator 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: validator
+  namespace: default
+  labels:
+    name: validator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: validator
+  template:
+    metadata:
+      name: validator 
+      labels:
+        name: validator
+    spec:
+      containers:
+        - name: webhook
+          image: hostnamevalidator
+          imagePullPolicy: Never
+          resources:
+            limits:
+              memory: 50Mi
+              cpu: 300m
+            requests:
+              memory: 00Mi
+              cpu: 300m
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/certs
+              readOnly: true
+            - name: logs
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: validator-certs
+        - name: logs
+          emptyDir: {}
